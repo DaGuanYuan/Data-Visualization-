@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project1</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    .gridlines .domain {
+      stroke: none;
+    }
+
+    .gridlines line {
+      stroke: rgb(187, 187, 187);
+    }
+  </style>
+</head>
+  <body>
+    <div id="div1">    
+      <svg id="svg1" height="600" width="900">
+        <text id = "label" x = "280" y = "50" text-anchor = "end" alignment-baseline="hanging" style="font-size: small; font-family: arial">Used Car Price</text>
+        <text id = "label" x = "280" y = "70" text-anchor = "end" alignment-baseline="hanging" style="font-size: small; font-family: arial">Fully Vaccinated Population</text>
+      </svg>
+  </div>
+  <script id="div1">
+    let svg1 = d3.select("svg#svg1");
+    let width = svg1.attr("width");
+    let height = svg1.attr("height");
+    let margin = {top: 50, right: 100, bottom: 100, left: 100};
+    let chartWidth = width - margin.left - margin.right;
+    let chartHeight = height - margin.top - margin.bottom;
+
+    let annotations = svg1.append("g").attr("id","annotations");
+    let chartArea = svg1.append("g").attr("id","points")
+                    .attr("transform",`translate(${margin.left},${margin.top})`);
+
+    d3.csv('data_proj1.csv', d3.autoType).then( (data) => {
+
+      //var formatDate = d3.timeFormat("%Y-%m-%d");
+      // var parseTime = d3.timeParse("%Y-%m")
+      // data.forEach( d => {
+      //     d['date'] = d['date_car'].toLocaleDateString;
+      //  });
+
+      console.log(data)
+                
+      //set x scale
+      const dateExtent = d3.extent(data, d => d['date_car']);
+      const dateScale = d3.scaleTime().domain(dateExtent).range([30,chartWidth-30]);
+
+      //set y scale1
+      
+      const priceExtent = d3.extent(data, d => d['price']);
+      console.log(priceExtent);
+      const priceScale = d3.scaleLinear().domain([20000,29000]).range([chartHeight, 0]);
+
+      //set y scale2
+      
+      const vacExtent = d3.extent(data, d => d['totalvac']);
+      console.log(vacExtent);
+      const vacScale = d3.scaleLinear().domain([0,25000000]).range([chartHeight, 0]);
+
+
+      // Y axis 1
+
+      let leftAxis = d3.axisLeft(priceScale)
+      
+      annotations.append("g")
+                .attr("class", "y axis")
+                .attr("transform",`translate(${margin.left},${margin.top})`)
+                .call(leftAxis)
+         
+      // Y axis 2
+
+      let rightAxis = d3.axisRight(vacScale)
+    
+      annotations.append("g")
+                .attr("class", "y axis")
+                .attr("transform",`translate(${margin.right + chartWidth -3},${margin.top})`)
+                .call(rightAxis)
+
+      // X axis
+
+      let bottomAxis = d3.axisBottom(dateScale)
+                          .tickFormat(d3.timeFormat('%Y-%m'))
+                          .ticks(12)
+      
+      annotations.append("g")
+                .attr("class", "x axis")
+                .attr("transform",`translate(${margin.left},${chartHeight+margin.top +15})`)
+                .call(bottomAxis);
+    
+
+      let tickLabels = ['July-20','Aug-20','Sep-20','Oct-20','Nov-20','Dec-20','Jan-21','Feb-21','Mar-21','Apr-21','May-21','Jun-21','Jul-21','Aug-21','Sep-21','Oct-21'];
+      bottomAxis.tickFormat((d,i) => tickLabels[i]);
+
+      //change font and size
+      // bottomAxis.select(".tick text")
+      //     .attr("font-size","10");
+
+      //line for car
+      var lineGen = d3.line()
+                      .x( d => dateScale(d['date_car']) )
+                      .y( d => priceScale(d['price']) )
+                      .curve(d3.curveMonotoneX);  
+
+      //line for vac
+      var lineGen2 = d3.line()
+                      .x( d => dateScale(d['date_car']) )
+                      .y( d => vacScale(d['totalvac']) )
+                      .curve(d3.curveMonotoneX);  
+
+      chartArea.append("path")
+              .datum(data)
+              .attr("class", "line")
+              .attr("fill", "none")
+              .attr("stroke", "steelblue")
+              .attr("stroke-width", 3)
+              .attr("d", lineGen);
+
+      chartArea.append("path")
+              .datum(data)
+              .attr("class", "line")
+              .attr("fill", "none")
+              .attr("stroke", "darkred")
+              .attr("stroke-width", 3)
+              .attr("d", lineGen2);
+
+        
+      data.forEach( (d,i) => {
+        chartArea.append("circle")
+            .attr("r", 3)
+            .attr("fill", "navy")
+            .attr("cx", dateScale(d['date_car']) )
+            .attr("cy", priceScale(d['price']) );
+
+
+            chartArea.append("circle")
+            .attr("r", 3)
+            .attr("fill", "purple")
+            .attr("cx", dateScale(d['date_car']) )
+            .attr("cy", vacScale(d['totalvac']) );
+      });
+        
+
+      chartArea.append("line")
+              .attr("stroke", "steelblue")
+              .attr("stroke-width", 3)
+              .attr("x1", 200 )
+              .attr("x2", 250 )
+              .attr("y1", 5) 
+              .attr("y2", 5 );
+
+      chartArea.append("line")
+              .attr("stroke", "darkred")
+              .attr("stroke-width", 3)
+              .attr("x1", 200 )
+              .attr("x2", 250 )
+              .attr("y1", 25) 
+              .attr("y2", 25 );
+
+      chartArea.append("circle")
+              .attr("r", 3)
+              .attr("fill", "navy")
+              .attr("cx", 225 )
+              .attr("cy", 5 );
+
+      chartArea.append("circle")
+              .attr("r", 3)
+              .attr("fill", "purple")
+              .attr("cx", 225 )
+              .attr("cy", 25 );
+
+        // text label for the x axis
+        // svg1.append("text")             
+        //     // .attr("transform",
+        //     //         "translate(" + (width/2) + " ," + 
+        //     //                     (height + margin.top + 20) + ")")
+        //     .style("text-anchor", "middle")
+        //     .text("Date");
+
+        // text label for the y axis
+        svg1.append("text")
+            .style("font-family", "arial")
+            .attr("transform", "rotate(-90)")
+            .attr("y",135 - margin.left)
+            .attr("x",30 - (height / 2))
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text("Average Used Car Price in the U.S. (US Dollar)");
+
+        svg1.append("text")
+            .style("font-family", "arial")
+            .attr("transform", "rotate(90)")
+            .attr("y",-885)
+            .attr("x", 285)
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text("Fully Vaccinated Population in the U.S.");
+
+        svg1.append("text")
+            .style("font-family", "arial")
+            .attr("y",10)
+            .attr("x", 450)
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text("Correlation between Used Car Price and Fully Vaccinated Population");
+        
+        })
+  </script>
+
+
+  <p></p>
+  <svg id="brandPrice" height="600" width="900"></svg>
+  <script id="brandPrice_srpt">
+    const svg2 = d3.select("svg#brandPrice");
+    let width2 = svg2.attr("width");
+    let height2 = svg2.attr("height");
+    let margin2 = {top: 30, right: 20, left: 122, bottom: 50};
+    let chartWidth2 = width2 - margin2.left - margin2.right;
+    let chartHeight2 = height2 - margin2.top - margin2.bottom;
+
+    // 600 - 50 - 30 = 65 * 8 = 4 + 8 * (31 + 28) + (31) + 13
+    let rectHeight = 31;
+    let rectGap = 28;
+    let rectDistance = rectGap + rectHeight;
+    let number = 9; // the number of rectangles
+    let rectInitailx = 0;
+
+    let annotations2 = svg2.append("g")
+                            .attr("id", "annotations_2")
+    
+    let charArea2 = svg2.append("g")
+                        .attr("id", "charArea_2")
+                        .attr("transform", `translate(${margin2.left}, ${margin2.top})`);
+    
+    d3.csv("carSales_proj1.csv").then( data => {
+      data.forEach( d=> {
+        d["Covid"] = Number( d["Covid"] );
+        d["Now"] = Number( d["Now"] );
+      })
+      console.log(data);
+      
+      const salesExtent = d3.extent(data, d => d["Now"]);
+      const salesScale = d3.scaleLinear()
+                            .domain([0, 165000])
+                            .range([0, chartWidth2]);
+      
+      let bottomAxis = d3.axisBottom(salesScale)
+      let bottomGridlines = d3.axisBottom(salesScale)
+                              .tickFormat("")
+                              .tickSize(-chartHeight2 - 16);
+
+      annotations2.append("g")
+                  .attr("class", "x axis")
+                  .attr("transform", `translate(${margin2.left},${margin2.top + chartHeight2 + 15})`)
+                  .call(bottomAxis)
+          
+      annotations2.append("g")
+                  .attr("class", "x gridlines")
+                  .attr("transform", `translate(${margin2.left},${margin2.top + chartHeight2 + 15})`)
+                  .call(bottomGridlines)
+      
+      data.forEach( (d, i) => {
+
+        charArea2.append("rect")
+                .attr("x", 0)
+                .attr("y", rectInitailx + rectDistance * i)
+                .attr("width", salesScale(d["Covid"]))
+                .attr("height", rectHeight)
+                .style("fill", "deepskyblue")
+        
+        charArea2.append("rect")
+                .attr("x", salesScale(d["Covid"]))
+                .attr("y", rectInitailx + rectDistance * i)
+                .attr("width", salesScale(d["Now"]) - salesScale(d["Covid"]))
+                .attr("height", rectHeight)
+                .style("fill", "blue")
+                
+        annotations2.append("text")
+                    .attr("x", margin2.left - 55)
+                    .attr("y", rectInitailx + margin2.top + rectDistance * i + rectHeight / 2 + 5)
+                    .style("font", "bold 12px arial")
+                    .text(d["Brand"])
+                  //  .attr("dominant-baseline", "hanging")
+                    .attr("text-anchor", "end")
+        
+        annotations2.append("image")
+                    .attr("x", margin2.left - 50)
+                    .attr("y", rectInitailx + margin2.top + rectDistance * i - 8)
+                    .attr("width", rectHeight + 15)
+                    .attr("height", rectHeight + 15)
+                    .attr("href", d["Logo"])
+      })
+
+      annotations2.append("text")
+                  .attr("x", 300)
+                  .attr("y", 20)
+                  .text("Sales of popular brand cars before and after the epidemic")
+                  .style("font", "bold 12px arial")
+                  .attr("text-anchor", "start")
+
+      annotations2.append("text")
+                  .attr("x", chartWidth2 / 2 + margin.left - 15)
+                  .attr("y", height - 5)
+                  .text("Sales")
+                  .style("font", "bold 12px arial")
+                  .attr("text-anchor", "start")
+
+    })
+
+  </script>
+  </body>
+</html>
+
